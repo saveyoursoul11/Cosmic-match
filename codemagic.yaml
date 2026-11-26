@@ -1,0 +1,31 @@
+workflows:
+  cosmic-match-ios:
+    name: Cosmic Match iOS
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Prepare Cosmic Match
+        script: |
+          mkdir -p www
+          cp index.html www/index.html
+          npm init -y
+          npm install @capacitor/core@8 @capacitor/cli@8 @capacitor/ios@8
+          npx cap init "Cosmic Match" com.saveyoursoul.cosmicmatch --web-dir www
+          npx cap add ios
+          npx cap sync ios
+      - name: Build iOS
+        script: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+    artifacts:
+      - build/Build/Products/**/*.app
