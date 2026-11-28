@@ -1,11 +1,20 @@
+
 workflows:
   cosmic-match-ios:
     name: Cosmic Match iOS
     instance_type: mac_mini_m2
     max_build_duration: 60
+
+    integrations:
+      app_store_connect: Cosmic Match Key
+
     environment:
       node: 22
       xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.saveyoursoul.cosmicmatch
+
     scripts:
       - name: Prepare Cosmic Match
         script: |
@@ -16,16 +25,22 @@ workflows:
           npx cap init "Cosmic Match" com.saveyoursoul.cosmicmatch --web-dir www
           npx cap add ios
           npx cap sync ios
-      - name: Build iOS
+
+      - name: Configure code signing
         script: |
-          xcodebuild \
-            -project ios/App/App.xcodeproj \
-            -scheme App \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO \
-            build
+          xcode-project use-profiles
+
+      - name: Build signed iOS IPA
+        script: |
+          xcode-project build-ipa \
+            --project ios/App/App.xcodeproj \
+            --scheme App
+
     artifacts:
-      - build/Build/Products/**/*.app
+      - build/ios/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: false
